@@ -1,0 +1,17 @@
+{
+  "name": "image-scrapper",
+  "version": "1.0.0",
+  "description": "Scrapper tool used to get all images from a page",
+  "main": "main.js",
+  "dependencies": {
+    "cypress": "^3.4.1",
+    "line-reader": "^0.4.0",
+    "puppeteer": "^1.20.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "run": "cypress run",
+    "open": "cypress open"
+  },
+  "author": ""
+}

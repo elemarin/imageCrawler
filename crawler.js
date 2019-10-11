@@ -8,52 +8,41 @@ function getFileName(url) {
     return `hrefs/${path}.json`;
 }
 
-async function getPageHrefs(url) {
+async function generateUrlsToCrawl(urls) {
     const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto(url);
 
     let links = [];
 
-    let hrefs = await page.$$eval('a', as => as.map(a => a.href));
-    hrefs.forEach(function (link) {
-        if (!links.includes(link) && !link.includes("javascript:void(0)") && link != "") {
-            links.push(link)
-        }
-    });
+    urls.forEach(async url => {
+        let page = await browser.newPage();
+        await page.goto(url);
 
-    await browser.close();
+        let hrefs = await page.$$eval('a', as => as.map(a => a.href));
+        hrefs.forEach(function (link) {
+            if (!links.includes(link) && !link.includes("javascript:void(0)") && link != "") {
+                links.push(link)
+            }
+        });
 
-    let jsonLinks = await JSON.stringify(links);
+        let jsonLinks = await JSON.stringify(links);
 
-    fs.writeFile(getFileName(url), jsonLinks, function (err, result) {
-        if (err) console.log('error', err);
+        fs.writeFile(getFileName(url), jsonLinks, function (err, result) {
+            if (err) console.log('error', err);
+        });
+
+        await page.close();
+
     });
 }
 
-async function crawler(entryPoints) {
-
-    let links = [];
-
-    entryPoints.forEach(async function (url) {
-        let newLinks = await getPageHrefs(url);
-
-        links = links.concat(newLinks);
-
-    })
-
-    return links;
-
-}
-
-function getEntrypoints(){
+function getEntrypoints() {
     return fs.readFileSync("entrypoints.txt", 'utf-8')
-    .split('\r')
-    .join('')
-    .split('\n')
-    .filter(Boolean);
+        .split('\r')
+        .join('')
+        .split('\n')
+        .filter(Boolean);
 }
 
 let entrypoints = getEntrypoints()
 
-crawler(entrypoints);
+generateUrlsToCrawl(entrypoints);

@@ -1,36 +1,41 @@
-const puppeteer = require('puppeteer');
-const fs = require ('fs');
-const lineReader = require('line-reader');
+const fs = require('fs');
+const crawler = require('./crawler');
 
-async function fetchImages(url) {
-    let browser = await puppeteer.launch({ headless: true });
-    let images = [];
-    let page = await browser.newPage();
-    await page.goto(url);
-    const imgs = await page.$$eval('img[src]', imgs => imgs.map(img => img.getAttribute('src') || img.getAttribute('srcset') || img.getAttribute('data-src') || img.getAttribute('data-srcset')));
-
-    imgs.forEach(async function(imageUrl){
-        if(imageUrl.indexOf("nhs-dynamic") > 0){
-            images.push(imageUrl);
-        }
-    })
-
-    let jsonImages = await JSON.stringify(images);
+let links = [];
 
 
-    fs.writeFileSync(getFileName(url), jsonImages, function(){
-        if(err){
-            console.log(err);
-        }
-    })
+
+function getURLsFromEntryPoints() {
+    let entryPoints = crawler.getEntrypoints();
+
+    crawler.crawl(entryPoints, "entryPointLinks");
 }
 
-lineReader.eachLine('urls', function(url) {
-    fetchImages(url);
-});
 
-function getFileName(url){
-    let path = url.replace('https://www.', '').replace(/[/\\?%*:|"<>]/g, '-');
-    path = path.split(".").join("-");
-    return `imageURLs/${path}.json`;
+
+function crawlURLsFromEntryPoints() {
+    //Get all file names from the href/ folder
+    let files = fs.readdirSync("entryPointLinks");
+
+    //Read the list from each file and concatenate it
+    files.forEach(file => {
+        links = links.concat(JSON.parse(fs.readFileSync(`entryPointLinks/${file}`, "utf-8")));
+    })
+
+    console.log("Unfiltered set: ", links.length);
+
+
+    //remove duplicates from the list 
+    let filteredLinks = [...new Set(links)];
+    
+    console.log("filtered set: ", filteredLinks.length);
+
+    crawler.crawl(filteredLinks, "urlsToCrawl");
 }
+
+
+//Step 1 - create the files to crawl from the entry points
+getURLsFromEntryPoints();
+
+//Step 2 - crawl those files, and generate more files, which we will use to gather images from
+// crawlURLsFromEntryPoints();

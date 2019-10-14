@@ -1,11 +1,15 @@
-const fs = require('fs');
-let links = [];
+const kue = require('kue');
+let queue = kue.createQueue();
 
-let files = fs.readdirSync("hrefs");
+queue.process('email', function (job, done) {
+    email(job.data.to, done);
+});
 
-files.forEach( file => {
-    links = links.concat(JSON.parse(fs.readFileSync(`hrefs/${file}`, "utf-8")));
-})
-
-
-console.log('Size:', links.length);
+function email(address, done) {
+    if (!isValidEmail(address)) {
+        //done('invalid to address') is possible but discouraged
+        return done(new Error('invalid to address'));
+    }
+    // email send stuff...
+    done();
+}

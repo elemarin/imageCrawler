@@ -1,15 +1,16 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
-const lineReader = require('line-reader');
 
-function getFileName(url) {
+function getFileName(folder, url) {
     let path = url.replace('https://www.', '').replace(/[/\\?%*:|"<>]/g, '-');
     path = path.split(".").join("-");
-    return `hrefs/${path}.json`;
+    return `${folder}/${path}.json`;
 }
 
-async function generateUrlsToCrawl(urls) {
-    const browser = await puppeteer.launch();
+async function crawl(urls, folder) {
+    const browser = await puppeteer.launch({
+        headless: false
+    });
 
     let links = [];
 
@@ -26,7 +27,7 @@ async function generateUrlsToCrawl(urls) {
 
         let jsonLinks = await JSON.stringify(links);
 
-        fs.writeFile(getFileName(url), jsonLinks, function (err, result) {
+        fs.writeFile(getFileName(folder, url), jsonLinks, function (err, result) {
             if (err) console.log('error', err);
         });
 
@@ -43,6 +44,7 @@ function getEntrypoints() {
         .filter(Boolean);
 }
 
-let entrypoints = getEntrypoints()
-
-generateUrlsToCrawl(entrypoints);
+module.exports = {
+    crawl,
+    getEntrypoints
+}
